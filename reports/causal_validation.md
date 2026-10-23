@@ -54,13 +54,31 @@ Approximately 54.4% of customers received multiple offers. Therefore, offer reco
 4. The validity-window check confirms that all 25,073 records meet the dataset's existing validity-window flag; it does not independently validate every aspect of outcome construction.
 5. Additional checks are needed to assess treatment overlap, model assumptions, and the robustness of estimated effects.
 
-## 7. Next Steps
+The propensity-overlap diagnostic was run on 25,073 offer records.
+
+BOGO records: 16,511
+
+Discount records: 8,562
+
+BOGO mean propensity score: 0.341
+
+Discount mean propensity score: 0.342
+
+Estimated common propensity-score range: 0.334–0.348
+
+Records outside the common range: 1
+
+The estimated propensity scores show substantial overlap between BOGO and discount offer records under the current model.
+ ## 7. Propensity-Score Overlap Assessment
+
+However, the propensity model uses a limited set of demographic characteristics. Overlap alone does not establish that treatment assignment is free from confounding or that the causal estimates are unbiased. Further model validation is required.
+## 8. Next Steps
 
 - Review propensity-score overlap.
 - Compare descriptive findings with initial DoWhy and EconML estimates.
 - Document assumptions and limitations of the causal models.
 - Develop a budget-allocation optimization component with explicit assumptions and tests.
 
-## 8. Conclusion
+## 9. Conclusion
 
 The dataset contains 25,073 offer records from 14,808 unique customers. Discount offers have a higher observed completion rate than BOGO offers. Because many customers received multiple offers and unmeasured confounding may remain, further validation is required before drawing causal conclusions.
