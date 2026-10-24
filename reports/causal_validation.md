@@ -72,13 +72,50 @@ The estimated propensity scores show substantial overlap between BOGO and discou
  ## 7. Propensity-Score Overlap Assessment
 
 However, the propensity model uses a limited set of demographic characteristics. Overlap alone does not establish that treatment assignment is free from confounding or that the causal estimates are unbiased. Further model validation is required.
-## 8. Next Steps
+
+## 8. EconML Effect Estimate Summary
+
+The existing EconML analysis produced 6,293 estimated treatment effects.
+
+Metric
+
+Estimated Value
+
+Number of estimates
+
+6,293
+
+Mean estimated effect
+
+0.0885
+
+Median estimated effect
+
+0.0968
+
+Standard deviation
+
+0.0333
+
+Minimum estimated effect
+
+-0.0413
+
+Maximum estimated effect
+
+0.1519
+
+The mean estimated effect is approximately +8.85 percentage points, and the median is approximately +9.68 percentage points, assuming the effects are on the probability scale.
+
+These estimates suggest a positive modeled effect of discount offers relative to BOGO offers. However, they are exploratory and do not prove causality. Unmeasured confounding, repeated customer observations, model assumptions, and statistical uncertainty may affect the results. Statistical significance has not been established by this summary alone.
+
+## 9. Next Steps
 
 - Review propensity-score overlap.
 - Compare descriptive findings with initial DoWhy and EconML estimates.
 - Document assumptions and limitations of the causal models.
 - Develop a budget-allocation optimization component with explicit assumptions and tests.
 
-## 9. Conclusion
+## 10. Conclusion
 
 The dataset contains 25,073 offer records from 14,808 unique customers. Discount offers have a higher observed completion rate than BOGO offers. Because many customers received multiple offers and unmeasured confounding may remain, further validation is required before drawing causal conclusions.
