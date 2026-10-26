@@ -1,126 +1,122 @@
 
 from pathlib import Path
-import warnings
 
-import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from econml.dml import SparseLinearDML
-from sklearn.model_selection import GroupShuffleSplit
+from sklearn.linear_model import LogisticRegression
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_FILE = ROOT / "outputs" / "causal_features_dataset.csv"
+OUTPUT_FILE = ROOT / "outputs" / "propensity_scores.csv"
 
 
 def main():
     df = pd.read_csv(INPUT_FILE)
 
-    # Retain records whose complete offer window was observed.
+    # Keep offers with a fully observed validity window.
     df = df[
         df["full_validity_window_observed"].astype(bool)
     ].copy()
 
-    # Required treatment, outcome, and customer identifier.
-    df = df.dropna(
-        subset=["person", "treatment_discount", "outcome_completed"]
-    ).copy()
+    # Identify missing customer profiles.
+    df["profile_missing"] = df["age"].isna().astype(int)
 
-    # Demographics are pre-treatment candidate features.
-    features = ["age", "income", "gender"]
+    features = [
+        "age",
+        "income",
+        "gender",
+        "profile_missing",
+    ]
+
+    df = df.dropna(subset=["treatment_discount"]).copy()
+
     X = df[features]
-    T = df["treatment_discount"].astype(int).to_numpy()
-    Y = df["outcome_completed"].astype(float).to_numpy()
-    groups = df["person"].to_numpy()
+    treatment = df["treatment_discount"].astype(int)
 
-    # Split by customer so a customer cannot appear in both sets.
-    splitter = GroupShuffleSplit(
-        n_splits=1, test_size=0.25, random_state=42
-    )
-    train_idx, test_idx = next(splitter.split(X, Y, groups))
-
-    X_train = X.iloc[train_idx]
-    T_train = T[train_idx]
-    Y_train = Y[train_idx]
-
-    print("Total records:", len(df))
-    print("Unique customers:", df["person"].nunique())
-    print("Training records:", len(train_idx))
-    print("Test records:", len(test_idx))
-    print("Training treatment counts:", np.bincount(T_train))
-
-    # Preprocess numeric and categorical features.
     numeric_pipeline = make_pipeline(
         SimpleImputer(strategy="median"),
         StandardScaler(),
     )
+
     categorical_pipeline = make_pipeline(
         SimpleImputer(strategy="most_frequent"),
         OneHotEncoder(handle_unknown="ignore"),
     )
+
     preprocess = ColumnTransformer(
-        [
+        transformers=[
             ("numeric", numeric_pipeline, ["age", "income"]),
             ("categorical", categorical_pipeline, ["gender"]),
+            ("indicator", "passthrough", ["profile_missing"]),
         ]
     )
 
-    X_train_processed = preprocess.fit_transform(X_train)
+    model = make_pipeline(
+        preprocess,
+        LogisticRegression(max_iter=1000),
+    )
 
-    if len(np.unique(T_train)) != 2:
-        raise ValueError(
-            "Training split must contain both BOGO and discount records."
+    model.fit(X, treatment)
+    df["propensity_score"] = model.predict_proba(X)[:, 1]
+
+    print("Rows used:", len(df))
+
+    print("\nPropensity-score summary by treatment:")
+    print(
+        df.groupby("treatment_discount")["propensity_score"]
+        .agg(["count", "min", "max", "mean"])
+        .round(4)
+        .to_string()
+    )
+
+    print("\nPropensity-score summary by profile status:")
+    print(
+        df.groupby("profile_missing")["propensity_score"]
+        .agg(["count", "min", "max", "mean"])
+        .rename(index={0: "Available", 1: "Missing"})
+        .round(4)
+        .to_string()
+    )
+
+    # Calculate the common propensity-score range.
+    low = max(
+        df.loc[treatment == 0, "propensity_score"].min(),
+        df.loc[treatment == 1, "propensity_score"].min(),
+    )
+
+    high = min(
+        df.loc[treatment == 0, "propensity_score"].max(),
+        df.loc[treatment == 1, "propensity_score"].max(),
+    )
+
+    print(f"\nCommon range: {low:.4f} to {high:.4f}")
+
+    if low >= high:
+        print("Warning: no common propensity-score range.")
+    else:
+        outside = (
+            (df["propensity_score"] < low)
+            | (df["propensity_score"] > high)
         )
+        print("Rows outside common range:", int(outside.sum()))
 
-    # Use separate nuisance models for outcome and treatment.
-    model_y = RandomForestRegressor(
-        n_estimators=100, min_samples_leaf=10, random_state=42
-    )
-    model_t = RandomForestClassifier(
-        n_estimators=100, min_samples_leaf=10, random_state=42
-    )
+    # Save scores for further validation and visualization.
+    df[
+        [
+            "person",
+            "offer_type",
+            "treatment_discount",
+            "profile_missing",
+            "propensity_score",
+        ]
+    ].to_csv(OUTPUT_FILE, index=False)
 
-    # LinearDML estimates a conditional treatment effect.
-    dml = SparseLinearDML(
-    model_y=model_y,
-    model_t=model_t,
-    discrete_treatment=True,
-    cv=2,
-    random_state=42,
-)
-    with warnings.catch_warnings():
-        warnings.simplefilter("default")
-        dml.fit(Y_train, T_train, X=X_train_processed)
+    print(f"\nPropensity scores saved to: {OUTPUT_FILE}")
+    print("Note: Overlap is a diagnostic, not proof of causal validity.")
 
-    # Estimate effects for the held-out customers.
-    X_test_processed = preprocess.transform(X.iloc[test_idx])
-    effects = dml.effect(X_test_processed)
 
-    print("\nEconML SparseLinearDML completed.")
-    print(
-        "Mean estimated treatment effect:",
-        round(float(np.mean(effects)), 4),
-    )
-    print(
-        "Median estimated treatment effect:",
-        round(float(np.median(effects)), 4),
-    )
-
-    # Save exploratory treatment-effect estimates.
-    results = pd.DataFrame({
-        "estimated_treatment_effect": effects
-    })
-
-    results_file = ROOT / "outputs" / "econml_effect_estimates.csv"
-    results.to_csv(results_file, index=False)
-
-    print(f"Effect estimates saved to: {results_file}")
-    print(
-        "Interpretation: exploratory estimate; "
-        "not confirmed causal evidence."
-    )
 if __name__ == "__main__":
     main()
