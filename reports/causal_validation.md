@@ -109,13 +109,56 @@ The mean estimated effect is approximately +8.85 percentage points, and the medi
 
 These estimates suggest a positive modeled effect of discount offers relative to BOGO offers. However, they are exploratory and do not prove causality. Unmeasured confounding, repeated customer observations, model assumptions, and statistical uncertainty may affect the results. Statistical significance has not been established by this summary alone.
 
-## 9. Next Steps
+## 9. Robustness Analysis
 
-- Review propensity-score overlap.
-- Compare descriptive findings with initial DoWhy and EconML estimates.
-- Document assumptions and limitations of the causal models.
-- Develop a budget-allocation optimization component with explicit assumptions and tests.
+### 9.1 Within-Customer Comparison
+
+Of 25,073 offer records from 14,808 unique customers, 4,059 customers received both BOGO and Discount offers.
+
+- Discount completion rate higher: 1,027 customers
+- BOGO completion rate higher: 585 customers
+- Equal completion rates: 2,447 customers
+- Mean within-customer difference: +9.73 percentage points
+- Median within-customer difference: 0 percentage points
+
+### 9.2 Paired Sign Test
+
+Among the 1,612 customers with unequal completion rates, 1,027 favored Discount and 585 favored BOGO.
+
+- Share favoring Discount among non-tied customers: 63.71%
+- 95% confidence interval: 61.31%–66.06%
+- Two-sided p-value: approximately 2.10 × 10^-28
+
+This test indicates that positive and negative customer-level differences are not equally frequent. It does not establish a causal effect.
+
+### 9.3 Equal-Offer-Count Comparison
+
+A subset of 2,755 customers received equal numbers of BOGO and Discount offers.
+
+- Discount completion rate higher: 616 customers
+- BOGO completion rate higher: 325 customers
+- Equal completion rates: 1,814 customers
+- Mean within-customer difference: +10.53 percentage points
+- Median within-customer difference: 0 percentage points
+
+The positive mean difference remains in this subset. Equal offer counts do not control for offer timing, offer characteristics, exposure conditions, or unmeasured confounding.
+
+### 9.4 Propensity-Score Overlap
+
+The demographic propensity model showed substantial overlap between treatment groups, with a common range of approximately 0.334–0.348 and one record outside that range. Overlap is a diagnostic, not proof that treatment assignment is unconfounded.
+
+### 9.5 Limitations and Remaining Work
+
+- The DoWhy and EconML estimates are exploratory and depend on modeling assumptions.
+- Repeated offers from the same customer may be dependent.
+- Equal offer counts do not guarantee comparable exposure or timing.
+- The paired sign test does not measure causal effect size.
+- Further validation of confounding, treatment assignment, and model assumptions is required before making causal claims.
+
+Remaining work includes reviewing model assumptions, documenting uncertainty, and preparing the final results dashboard.
 
 ## 10. Conclusion
 
-The dataset contains 25,073 offer records from 14,808 unique customers. Discount offers have a higher observed completion rate than BOGO offers. Because many customers received multiple offers and unmeasured confounding may remain, further validation is required before drawing causal conclusions.
+The dataset contains 25,073 offer records from 14,808 unique customers. Discount offers have a higher observed completion rate than BOGO offers in the overall descriptive comparison. The within-customer analysis and equal-offer-count subset also show positive mean differences favoring Discount.
+
+The paired sign test finds an imbalance between positive and negative customer-level differences among non-tied customers. However, these analyses do not establish that Discount offers cause higher completion. Differences in timing, offer exposure, repeated observations, and unmeasured confounding remain potential limitations. Further causal validation is required before drawing causal conclusions.
