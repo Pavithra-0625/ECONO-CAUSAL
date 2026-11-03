@@ -1,0 +1,2 @@
+eligible_records,matched_pairs,unique_treated_customers,matched_ATT,CI_95_lower,CI_95_upper,common_support_lower,common_support_upper
+25072,8561,7328,0.09660086438500175,0.08363216913911926,0.10980609741852586,0.3341890821829772,0.34764195322156277
