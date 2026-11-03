@@ -1,0 +1,2 @@
+total_offer_records,unique_customers,discount_records,bogo_records,discount_completion_rate,bogo_completion_rate,mean_predicted_effect,median_predicted_effect,positive_effect_count,negative_effect_count,final_qini_gain,random_simulations
+6293,3702,2163,4130,0.5270457697642164,0.4573849878934625,0.0828770543157293,0.0924575213274994,6100,193,150.67627118644077,200
