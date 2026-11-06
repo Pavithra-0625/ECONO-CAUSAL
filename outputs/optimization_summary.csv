@@ -1,0 +1,2 @@
+total_budget,cost_per_discount,maximum_possible_customers,total_unique_customers,positive_effect_customers,customers_allocated,customers_not_allocated,total_budget_used,remaining_budget,budget_utilization_percentage,mean_predicted_effect_allocated,sum_predicted_effects_allocated
+200000,100,2000,3702,3589,2000,1702,200000,0,100.0,0.11130625153729985,222.61250307459972
